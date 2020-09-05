@@ -12,13 +12,6 @@ const int INTERVEL = BOARD/20;  //棋子间隔
 const int INDEX = INTERVEL*0.4;  //索引范围
 const int AI_THINK = 800;   //AI思考时间
 
-//禁手类型
-//QString four_ban[18]={" Bbbb "," bbbB ",
-//                      "wBbbb ","|Bbbb "," Bbbbw"," Bbbb|",
-//                      "wbbbB ","|bbbB "," bbbBw"," bbbB|",
-//                      "wBbbbw","wbbbBw","|Bbbb|","|bbbB|",
-//                      "wBbbb|","wbbbB|","|Bbbbw","|bbbBw"};
-
 enum GameType{
     MAN_TO_MAN,     //双人
     MAN_TO_AI,      //人机
@@ -26,9 +19,13 @@ enum GameType{
 };
 enum GameState{
     PlAYING,        //开始游戏
-    WIN,
     STALEMATE,      //和棋
-    LOSE
+
+    BLACK_WIN,
+    BLACK_LOSE,
+    WHITEWIN,
+    WHITELOSE,
+    NOWINNER
 };
 class Game{
 
@@ -38,6 +35,10 @@ public:
     void compgame();    //人机对战
     void comp_comp();   //机机对战
     void startgame(GameType type);     //初始化
+    GameState win_lose(int row, int col);   //判断输赢
+    void checkboard();          //检查棋盘
+    void processforbid(QString &str, int col, int row); //处理禁手
+    void chessbyai();       //检查每条连线的可下性，checkboard()调用
 
 public:
     GameState gamestate;     //状态
@@ -46,25 +47,18 @@ public:
     bool startban;          //是否开启禁手
     bool banprompt;          //是否开启禁手提示
     bool black_white = 1;      //true:黑
+    int boardban[21][21];   //用于禁手情况
     /*记录棋子的情况
      *1:黑子
      *-1:白子
      *0:空位
-     *4:四四禁手点位
-     *5:五五禁手点位
      */
     int board[21][21];
     /*记录每个点位的得分情况（用于AI参与的情况）
      *
      */
     int board_score[21][21];
+    //目前没有悔棋的功能（因为没有上一步棋盘的信息）
 };
 #endif // GAME_H
-//int Game::BOARD = 700;
-//int Game::GRID = 20;
-//int Game::CHESS_SIZE = 15;
-//int Game::CHESS_MATE = 5;
-//int Game::INTERVEL = BOARD/20;
-//int Game::INDEX = INTERVEL*0.4;
-//int Game::AI_THINK = 800;
 

@@ -23,9 +23,6 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
-    //绘制
-    void paintEvent(QPaintEvent *event);    //怎么用？
-
 public slots:
     void PP_Slot();
     void PA_Slot();

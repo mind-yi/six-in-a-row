@@ -12,13 +12,13 @@ p_pwindow::p_pwindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    game = new Game;
+
     //设定屏幕位置
     this->setFixedSize(1100, 780);
     this->move(400, 125);
+    //设置询问窗口
 
-    //初始化游戏
-    initgame();
-    game->startgame(MAN_TO_MAN);
 }
 
 p_pwindow::~p_pwindow()
@@ -26,153 +26,39 @@ p_pwindow::~p_pwindow()
     delete ui;
     delete game;
 }
+//初始化对应模式的棋盘
+void p_pwindow::initgame(GameType type){
+    game->gametype = type;
+    //下面布置界面
+    if(game->gametype == MAN_TO_MAN){       //双人模式
 
-void p_pwindow::initgame(){
-    game = new Game;
+    }
 }
 
+//
+//界面与game交会函数（该函数即要用到game里面的数据也要用到界面的数据）
 void p_pwindow::chessbyperson()
 {
     if(clickPosCol != -1 && clickPosRow != -1 &&
-            game->board[clickPosRow][clickPosCol] != 1 &&
-            game->board[clickPosRow][clickPosCol] != -1){
+            game->board[clickPosRow][clickPosCol] == 0){
         //考虑落子
-        if(game->black_white && game->board[clickPosRow][clickPosCol] != 4 &&
-                game->board[clickPosRow][clickPosCol] != 5)
+        if(game->black_white && game->boardban[clickPosRow][clickPosCol] == false){
             //放黑子记为1
             game->board[clickPosRow][clickPosCol] = 1;
+        }
         else
             //放白子记为-1
             game->board[clickPosRow][clickPosCol] = -1;
+        //判断输赢
+        game->gamestate = game->win_lose(clickPosRow, clickPosCol);
+        if(game->gamestate != NOWINNER && game->gamestate != STALEMATE){//胜负已分
+            emit finalsignal();
+        }
         game->black_white = !(game->black_white);
     }
     else return;
-    checkboard(); //checkboard()出错
+    game->checkboard(); //checkboard()出错
     update();
-}
-//决定输赢、(AI)统计分数、找出禁手点位
-void p_pwindow::checkboard()
-{
-    //遍历每一个空位
-    game->four_ban = 0;
-    game->five_ban = 0;
-    for(int i=0; i<=GRID; i++){
-        for(int j=0; j<=GRID; j++){
-            if(game->board[i][j] != 0) continue;
-            //左斜"\"
-            QString str = "";
-            for(int ii=i-6, jj=j-6; ii<=i+6; ii++,jj++){
-                if(ii < 0 || ii > GRID){
-                    str += "|";
-                }
-                else if(ii == i&&jj == j){
-                    str += "B";
-                }
-                else if(game->board[ii][jj] == -1){
-                    str += "w";
-                }
-                else if(game->board[ii][jj] == 0){
-                    str += " ";
-                }
-                else if(game->board[ii][jj] == 1){
-                    str += "b";
-                }
-                else continue;
-            }
-            //处理左斜"\"
-            process(str, j, i);
-            //竖线"|"
-            str = "";
-            qDebug()<<"竖线"<<"str:"<<str<<endl;
-            for(int ii=i-6; ii<=i+6; ii++){
-                if(ii < 0 || ii > GRID){
-                    str += "|";
-                }
-                else if(ii == i){
-                    str += "B";
-                }
-                else if(game->board[ii][j] == -1){
-                    str += "w";
-                }
-                else if(game->board[ii][j] == 0){
-                    str += " ";
-                }
-                else if(game->board[ii][j] == 1){
-                    str += "b";
-                }
-                else continue;
-            }
-            //处理"|"
-            qDebug()<<"处理竖线"<<"str:"<<str<<endl;
-            process(str, i, j);
-            //右斜"/"
-            str = "";
-            for(int ii=i-6, jj=j+6; ii<=i+6; ii++, jj--){
-                if(ii < 0 || ii > GRID){
-                    str += "|";
-                }
-                else if(ii == i&&jj == j){
-                    str += "B";
-                }
-                else if(game->board[ii][jj] == -1){
-                    str += "w";
-                }
-                else if(game->board[ii][jj] == 0){
-                    str += " ";
-                }
-                else if(game->board[ii][jj] == 1){
-                    str += "b";
-                }
-                else continue;
-            }
-            //处理"/"
-            process(str, i, j);
-            //横线"-"
-            for(int jj=j-6; jj<=j+6; jj++){
-                if(jj < 0 || jj > GRID){
-                    str += "|";
-                }
-                else if(jj == j){
-                    str += "B";
-                }
-                else if(game->board[i][jj] == -1){
-                    str += "w";
-                }
-                else if(game->board[i][jj] == 0){
-                    str += " ";
-                }
-                else if(game->board[i][jj] == 1){
-                    str += "b";
-                }
-                else continue;
-            }
-            //横线"-"
-            process(str, i, j);
-            //到此，所有的连线类型处理完毕
-            if(game->four_ban >1){
-                game->board[i][j] = 4;
-            }
-            if(game->five_ban >1){
-                game->board[i][j] = 5;
-            }
-            //禁手信息录入完毕
-            game->four_ban = 0; //注意归零
-            game->five_ban = 0;
-        }
-    }
-}
-//处理每一种连线类型
-void p_pwindow::process(QString &str, int col, int row)
-//https://blog.csdn.net/kidults/article/details/80075896(QString 用法)
-{
-    int len = str.length();
-
-    //四四禁手
-    if(str.contains(" Bbbb ") || str.contains(" bbbB ") ||
-            str.contains(" bBbb ") || str.contains(" bbBb ")){
-        game->four_ban++;
-    }
-
 }
 
 //可能需要多画一个框
@@ -198,8 +84,7 @@ void p_pwindow::paintEvent(QPaintEvent *event)
     QBrush brush;
     brush.setStyle(Qt::SolidPattern);
     if(clickPosRow>=0 && clickPosRow<=GRID && clickPosCol>=0 &&
-            clickPosCol<=GRID && game->board[clickPosRow][clickPosCol] != 1 ||
-            game->board[clickPosRow][clickPosCol] != -1){
+            clickPosCol<=GRID && game->boardban[clickPosRow][clickPosCol]==0){
         if(game->black_white)
             brush.setColor(Qt::black);
         else
@@ -228,7 +113,8 @@ void p_pwindow::paintEvent(QPaintEvent *event)
                                     CHESS_SIZE*2, CHESS_SIZE*2);
             }
             //画禁手
-            else if(game->black_white == 1 && (game->board[i][j] == 4 || game->board[i][j] == 5)){
+            else if(game->black_white == 1 && game->boardban[i][j] == true){
+
                 brush.setColor(Qt::red);
                 painter.setBrush(brush);
                 painter.drawRect(MARGIN+j*INTERVEL-PIX_SIZE,
@@ -314,11 +200,15 @@ void p_pwindow::mouseReleaseEvent(QMouseEvent *event)
         return;
     else SelectPos == false;
 
-    //点禁手位是没有用滴
-    if(game->board[clickPosRow][clickPosCol] == 4 ||
-            game->board[clickPosRow][clickPosCol] == 5){
+    //黑子点禁手位是没有用滴,白子可以
+    if(game->black_white == 1 && game->board[clickPosRow][clickPosCol] == true){
         return;
     }
     chessbyperson();
 
+}
+
+//结束
+void p_pwindow::finalsignal(){
+    qDebug()<<"结束了"<<endl;
 }

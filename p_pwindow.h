@@ -3,6 +3,7 @@
 
 #include "game.h"
 #include <QMainWindow>
+#include <QPushButton>
 
 
 namespace Ui {
@@ -21,15 +22,17 @@ public:
     void mouseMoveEvent(QMouseEvent *event);    //不懂event
     void mouseReleaseEvent(QMouseEvent *event);
 public:
-    void initgame();
+    void initgame(GameType type);
     void chessbyperson();
-    void checkboard();      //检查棋盘上的棋子情况
-    //checkboard()调用;
-    void process(QString &str, int row, int col);
+public:
+
+signals:
+    void finalsignal();
 private:
     Ui::p_pwindow *ui;
 
     Game *game;
+
     int clickPosRow, clickPosCol;   //储存将点击的位置。
     bool SelectPos = false;         //该点是否能选
 };
