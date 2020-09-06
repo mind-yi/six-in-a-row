@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QPushButton>
+#include <QDialogButtonBox>
 
 #include "p_pwindow.h"
 
@@ -24,8 +25,6 @@ public:
     ~MainWindow();
 
 public slots:
-    void PP_Slot();
-    void PA_Slot();
     void AA_Slot();
 
 private:

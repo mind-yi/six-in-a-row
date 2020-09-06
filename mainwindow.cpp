@@ -3,7 +3,7 @@
 
 #include <QPushButton>
 #include <QPainter>
-#include <QDialog>
+#include <QMessageBox>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),win_pp(),
@@ -21,8 +21,44 @@ MainWindow::MainWindow(QWidget *parent) :
     button_ai_ai->setGeometry(820, 440, 200, 100);
 
     //按钮功能
-    connect(button_man_man, &QPushButton::released, this, &MainWindow::PP_Slot);
-    connect(button_man_ai, &QPushButton::released, this, &MainWindow::PA_Slot);
+    connect(button_man_man, &QPushButton::released,
+            [=]()
+            {
+                int ret = QMessageBox::question(this, "Question", "是否选择黑子？");
+                switch (ret) {
+                case QMessageBox::Yes:
+                    this->hide(),
+                    win_pp.initgame(MAN_TO_MAN, true),
+                    win_pp.show();
+                    break;
+                case QMessageBox::No:
+                    this->hide(),
+                    win_pp.initgame(MAN_TO_MAN, false);
+                    win_pp.show();
+                    break;
+                default:
+                    break;
+                }
+
+            });
+    connect(button_man_ai, &QPushButton::released,
+            [=](){
+               int ret = QMessageBox::question(this, "Question", "是否选择黑子？");
+              switch (ret) {
+               case QMessageBox::Yes:
+                    this->hide(),
+                    win_pp.initgame(MAN_TO_AI, true),
+                    win_pp.show();
+                    break;
+              case QMessageBox::No:
+                    this->hide(),
+                    win_pp.initgame(MAN_TO_AI, false);
+                    win_pp.show();
+                    break;
+              default:
+                  break;
+               }
+            });
     connect(button_ai_ai, &QPushButton::released, this, &MainWindow::AA_Slot);
 }
 
@@ -31,23 +67,9 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::PP_Slot()
-{
-    this->hide();
-    win_pp.initgame(MAN_TO_MAN);
-    win_pp.show();
-}
-
-void MainWindow::PA_Slot()
-{
-    this->hide();
-    win_pp.initgame(MAN_TO_AI);
-    win_pp.show();
-}
-
 void MainWindow::AA_Slot()
 {
     this->hide();
-    win_pp.initgame(AI_TO_AI);
+    win_pp.initgame(AI_TO_AI, true);
     win_pp.show();
 }

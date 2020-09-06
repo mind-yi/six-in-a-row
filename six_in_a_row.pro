@@ -37,3 +37,5 @@ HEADERS += \
 FORMS += \
         mainwindow.ui \
     p_pwindow.ui
+
+CONFIG += C++11

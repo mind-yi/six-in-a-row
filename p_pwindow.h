@@ -4,6 +4,8 @@
 #include "game.h"
 #include <QMainWindow>
 #include <QPushButton>
+#include <QMessageBox>
+#include <QDialog>
 
 
 namespace Ui {
@@ -22,12 +24,16 @@ public:
     void mouseMoveEvent(QMouseEvent *event);    //不懂event
     void mouseReleaseEvent(QMouseEvent *event);
 public:
-    void initgame(GameType type);
+    void initgame(GameType type, bool chess);
     void chessbyperson();
+    void endgame(GameState state);
 public:
-
-signals:
-    void finalsignal();
+    QPushButton *button_retract;
+    QPushButton *button_return;
+    QPushButton *button_stalemant;
+    QPushButton *button_restart;
+    QPushButton *button_stop;
+    QPushButton *button_ban;
 private:
     Ui::p_pwindow *ui;
 

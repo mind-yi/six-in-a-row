@@ -13,7 +13,39 @@ p_pwindow::p_pwindow(QWidget *parent) :
     ui->setupUi(this);
 
     game = new Game;
-
+    //初始化按钮
+    button_retract = new QPushButton(this);
+    button_retract->setText("悔棋");
+    button_return = new QPushButton(this);
+    button_return->setText("返回菜单");
+    button_stalemant = new QPushButton(this);
+    button_stalemant->setText("求和");
+    button_restart = new QPushButton(this);
+    button_restart->setText("重新开始");
+    button_stop = new QPushButton(this);
+    button_stop->setText("暂停");
+    button_ban = new QPushButton(this);
+    button_ban->setText("点击开启禁手提示");
+    //关于禁手提示
+    connect(button_ban, &QPushButton::released,
+            [=](){
+                QString str = button_ban->text();
+                if(str == "点击开启禁手提示"){
+                    game->banprompt = true;
+                    button_ban->setText("点击关闭禁手提示");
+                }
+                else{
+                    game->banprompt = false;
+                    button_ban->setText("点击开启禁手提示");
+                }
+            });
+    //设置按钮大小、位置
+    button_retract->setGeometry(830, 100, 200, 100);
+    button_stalemant->setGeometry(830, 230, 200, 100);
+    button_restart->setGeometry(830, 360, 200, 100);
+    button_return->setGeometry(830, 490, 200, 100);
+    button_stop->setGeometry(830, 600, 200, 50);
+    button_ban->setGeometry(830, 710, 200, 50);
     //设定屏幕位置
     this->setFixedSize(1100, 780);
     this->move(400, 125);
@@ -25,13 +57,42 @@ p_pwindow::~p_pwindow()
 {
     delete ui;
     delete game;
+    delete button_restart;
+    delete button_retract;
+    delete button_return;
+    delete button_stalemant;
+    delete button_stop;
+    delete button_ban;
 }
 //初始化对应模式的棋盘
-void p_pwindow::initgame(GameType type){
+void p_pwindow::initgame(GameType type, bool chess){
     game->gametype = type;
+    if(chess) game->black_white = true;
+    else game->black_white = false;
+    //询问是否开启禁手模式
+    int ret = QMessageBox::question(this, "Question", "是否开启禁手模式？");
+    switch (ret) {
+    case QMessageBox::Yes:
+        game->startban = true;
+        break;
+    case QMessageBox::No:
+        game->startban = false;
+    default:
+        break;
+    }
     //下面布置界面
-    if(game->gametype == MAN_TO_MAN){       //双人模式
-
+    if(game->startban == false) button_ban->hide();
+    if(game->gametype == MAN_TO_AI){       //人机模式
+        button_stalemant->hide();
+        button_stop->hide();
+    }
+    else if(game->gametype == AI_TO_AI){
+        button_restart->hide();
+        button_retract->hide();
+        button_stalemant->hide();
+    }
+    else{
+        button_stop->hide();
     }
 }
 
@@ -52,13 +113,22 @@ void p_pwindow::chessbyperson()
         //判断输赢
         game->gamestate = game->win_lose(clickPosRow, clickPosCol);
         if(game->gamestate != NOWINNER && game->gamestate != STALEMATE){//胜负已分
-            emit finalsignal();
+            endgame(game->gamestate); //游戏结束
         }
         game->black_white = !(game->black_white);
     }
     else return;
     game->checkboard(); //checkboard()出错
     update();
+}
+//还需要处理结束后的棋盘
+void p_pwindow::endgame(GameState state)
+{
+    if(state == BLACK_WIN)
+        QMessageBox::about(this, "游戏结束","    黑方获胜    ");
+    else if(state == WHITEWIN){
+        QMessageBox::about(this, "游戏结束","    白方获胜    ");
+    }
 }
 
 //可能需要多画一个框
@@ -208,7 +278,3 @@ void p_pwindow::mouseReleaseEvent(QMouseEvent *event)
 
 }
 
-//结束
-void p_pwindow::finalsignal(){
-    qDebug()<<"结束了"<<endl;
-}

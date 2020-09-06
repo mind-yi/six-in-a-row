@@ -19,7 +19,7 @@ void Game::startgame(GameType type)
     //禁手归零
     four_ban = 0;
     five_ban = 0;
-    banprompt = false;  //默认关闭禁手
+    banprompt = false;  //默认关闭禁手提示
     startban = true;    //默认开启禁手
     //各种模式
     gametype = type;
@@ -179,10 +179,11 @@ void Game::checkboard()
                 else continue;
             }
             //处理左斜"\"
-            if(black_white == true)
+            if(black_white == true && startban == true)
                 processforbid(str, j, i);
             if(gametype == MAN_TO_AI){  //AI下棋了
-                chessbyai();
+                //关键是要统计该点的分数值
+                chessbyai(str, i, j);
             }
             //竖线"|"
             str = "";
@@ -206,7 +207,7 @@ void Game::checkboard()
                 else continue;
             }
             //处理"|"
-            if(black_white == true)
+            if(black_white == true && startban == true)
                 processforbid(str, j, i);
             //右斜"/"
             str = "";
@@ -230,7 +231,7 @@ void Game::checkboard()
                 else continue;
             }
             //处理"/"
-            if(black_white == true)
+            if(black_white == true && startban == true)
                 processforbid(str, j, i);
             //横线"-"
             str = "";
@@ -254,7 +255,7 @@ void Game::checkboard()
                 else continue;
             }
             //横线"-"
-            if(black_white == true)
+            if(black_white == true && startban == true)
                 processforbid(str, j, i);
             //到此，所有的连线类型处理完毕
             if(i == 19 && j == 5){
@@ -392,7 +393,61 @@ void Game::processforbid(QString &str, int col, int row)
     //至此禁手判断完毕
 }
 
-void Game::chessbyai()
+//计算对自己最有优势的情况
+//https://github.com/lihongxun945/myblog/issues/14#issue-341420244 （剪枝)
+//https://blog.csdn.net/livingsu/article/details/104539741 (评估)
+void Game::chessbyai(QString &str, int row, int col)
 {
+    bool chang = false;
+    //进行一次转换
+    if(str[6] == 'W'){
+        chang = true;
+        str[6] == 'B';
+        for(int i=0; i<13; i++){
+            if(str[i] == 'w'){
+                str[i] = 'b';
+            }
+            else if(str[i] == 'b')
+                str[i] = 'w';
+        }
+    }
 
+    int psame[2]={0, 0};
+    int pempty[2]={0, 0};
+    int jsame[2]={0, 0};
+    int jempty[2]={0, 0};
+
+    int t;
+    //向左
+    for(t=5; t>=0&&str[t]=='b'; psame[0]++,t--);
+    for(; t>=0&&str[t]==' '; pempty[0]++,t--);
+    for(; t>=0&&str[t]=='b'; jsame[0]++,t--);
+    for(; t>=0&&str[t]==' '; jempty[0]++,t--);
+    //向右
+    for(t=7; t<=12&&str[t]=='b'; psame[1]++,t++);
+    for(; t<=12&&str[t]==' '; pempty[1]++,t++);
+    for(; t<=12&&str[t]=='b'; jsame[1]++,t++);
+    for(; t<=12&&str[t]==' '; jempty[1]++,t++);
+
+    //开始判断
+    if(pempty[0]+pempty[1] == 0){
+        if(psame[0]+psame[1]==6)
+            board_score[row][col]+=100000;      //可以获胜了
+        else board_score[row][col]+=0;
+    }
+    else{
+        //1个
+        if(psame[0]+psame[1] == 0){
+            if(pempty[0]==0 || pempty[1]==0){   //冲1
+                board_score[row][col]++;
+            }
+            else board_score[row][col]+=2;      //活1
+        }
+        //2个
+        else{}
+    }
+    //2个
+    if(psame[0]+psame[1] == 1){
+        if(pempty[0]+pempty[1]>0){}
+    }
 }

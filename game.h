@@ -1,6 +1,7 @@
 #ifndef GAME_H
 #define GAME_H
-
+//https://blog.csdn.net/pige666/article/details/106378477?utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-2.channel_param&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-2.channel_param
+//（五子棋基本知识）
 #include <QString>
 const int BOARD = 700;  //棋盘的大小
 const int GRID = 20;    //格子的个数
@@ -38,7 +39,7 @@ public:
     GameState win_lose(int row, int col);   //判断输赢
     void checkboard();          //检查棋盘
     void processforbid(QString &str, int col, int row); //处理禁手
-    void chessbyai();       //检查每条连线的可下性，checkboard()调用
+    void chessbyai(QString &str, int row, int col);       //检查每条连线的可下性，checkboard()调用
 
 public:
     GameState gamestate;     //状态
