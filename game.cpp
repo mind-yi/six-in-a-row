@@ -5,7 +5,6 @@ Game::Game()
 
 }
 
-
 void Game::startgame(GameType type)
 {
     //棋盘上的所有点位清零
@@ -23,6 +22,9 @@ void Game::startgame(GameType type)
     startban = true;    //默认开启禁手
     //各种模式
     gametype = type;
+    if(type == MAN_TO_AI || type == AI_TO_AI){
+        initai();
+    }
 }
 //判断输赢
 GameState Game::win_lose(int row, int col)
@@ -146,7 +148,7 @@ GameState Game::win_lose(int row, int col)
     return NOWINNER;        //没有赢家
 }
 
-//决定输赢、(AI)统计分数、找出禁手点位
+//找出禁手点位
 void Game::checkboard()
 {
     //判断禁手
@@ -398,56 +400,382 @@ void Game::processforbid(QString &str, int col, int row)
 //https://blog.csdn.net/livingsu/article/details/104539741 (评估)
 void Game::chessbyai(QString &str, int row, int col)
 {
-    bool chang = false;
-    //进行一次转换
-    if(str[6] == 'W'){
-        chang = true;
-        str[6] == 'B';
-        for(int i=0; i<13; i++){
-            if(str[i] == 'w'){
-                str[i] = 'b';
+
+}
+
+void Game::initai()
+{
+    memset(typeall,0,sizeof(typeall));
+    //先初始化所有的棋形
+    //白赢
+    typeall[2][2][2][2][2][2][2] = WWIN;
+    typeall[2][2][2][2][2][2][0] = WWIN;
+    typeall[2][2][2][2][2][2][1] = WWIN;
+    typeall[2][2][2][2][2][2][3] = WWIN;
+    typeall[0][2][2][2][2][2][2] = WWIN;
+    typeall[1][2][2][2][2][2][2] = WWIN;
+    typeall[3][2][2][2][2][2][2] = WWIN;
+    //黑赢
+    typeall[1][1][1][1][1][1][1] = BWIN;
+    typeall[1][1][1][1][1][1][0] = BWIN;
+    typeall[1][1][1][1][1][1][2] = BWIN;
+    typeall[1][1][1][1][1][1][3] = BWIN;
+    typeall[1][1][1][1][1][1][4] = BWIN;
+    typeall[0][1][1][1][1][1][1] = BWIN;
+    typeall[2][1][1][1][1][1][1] = BWIN;
+    typeall[3][1][1][1][1][1][1] = BWIN;
+    typeall[4][1][1][1][1][1][1] = BWIN;
+    //黑五五禁手
+    typeall[4][1][1][1][1][0][0] = block5;
+    typeall[4][1][1][1][1][0][2] = block5;
+    typeall[4][1][1][1][1][0][3] = block5;
+    typeall[1][4][1][1][1][0][0] = block5;
+    typeall[1][4][1][1][1][0][2] = block5;
+    typeall[1][4][1][1][1][0][3] = block5;
+    typeall[1][1][4][1][1][0][0] = block5;
+    typeall[1][1][4][1][1][0][2] = block5;
+    typeall[1][1][4][1][1][0][3] = block5;
+    typeall[1][1][1][4][1][0][0] = block5;
+    typeall[1][1][1][4][1][0][2] = block5;
+    typeall[1][1][1][4][1][0][3] = block5;
+    typeall[1][1][1][1][4][0][0] = block5;
+    typeall[1][1][1][1][4][0][2] = block5;
+    typeall[1][1][1][1][4][0][3] = block5;
+    //黑四四禁手
+    typeall[4][1][1][1][0][0][0] = block4;
+    typeall[4][1][1][1][0][2][0] = block4;
+    typeall[4][1][1][1][0][0][2] = block4;
+    typeall[4][1][1][1][0][0][3] = block4;
+    typeall[4][1][1][1][0][2][2] = block4;
+    typeall[4][1][1][1][0][2][3] = block4;
+    typeall[1][4][1][1][0][0][0] = block4;
+    typeall[1][4][1][1][0][2][0] = block4;
+    typeall[1][4][1][1][0][0][2] = block4;
+    typeall[1][4][1][1][0][2][2] = block4;
+    typeall[1][4][1][1][0][0][3] = block4;
+    typeall[1][4][1][1][0][2][3] = block4;
+    typeall[1][1][4][1][0][0][0] = block4;
+    typeall[1][1][4][1][0][2][0] = block4;
+    typeall[1][1][4][1][0][2][2] = block4;
+    typeall[1][1][4][1][0][0][2] = block4;
+    typeall[1][1][4][1][0][0][3] = block4;
+    typeall[1][1][4][1][0][2][3] = block4;
+    typeall[1][1][1][4][0][0][0] = block4;
+    typeall[1][1][1][4][0][2][0] = block4;
+    typeall[1][1][1][4][0][0][2] = block4;
+    typeall[1][1][1][4][0][0][3] = block4;
+    typeall[1][1][1][4][0][2][2] = block4;
+    typeall[1][1][1][4][0][2][3] = block4;
+
+    //补全棋型
+    int p1,p2,p3,p4,p5,p6,p7;
+    int lh, lb, rh, rb;
+    for(p1=0; p1<4; p1++){
+        for(p2=0; p2<3; p2++){
+            for(p3=0; p3<3; p3++){
+                for(p4=0; p4<3; p4++){
+                    for(p5=0; p5<3; p5++){
+                        for(p6=0; p6<3; p6++){
+                            for(p7=0; p7<4; p7++){
+                                lh=rh=lb=rb=0;
+
+                                if(p1==1) lh++;
+                                else if(p1==2) lb++;
+
+                                if(p2==1) lh++,rh++;
+                                else if(p2==2) lb++,rb++;
+
+                                if(p3==1) lh++,rh++;
+                                else if(p3==2) lb++,rb++;
+
+                                if(p4==1) lh++,rh++;
+                                else if(p4==2) lb++,rb++;
+
+                                if(p5==1) lh++,rh++;
+                                else if(p5==2) lh++,rb++;
+
+                                if(p6==1) lh++,rh++;
+                                else if(p6==2) lb++,rb++;
+
+                                if(p7==1) rh++;
+                                else if(p7==2) rb++;
+
+                                if(p1==3 || p7==3){//有边界
+                                    if(p1==3 && p7!=3){//左边界
+                                        //白"冲"5
+                                        if(rh==0 && rb==5){
+                                            if(typeall[p1][p2][p3][p4][p5][p6][p7]==0){
+                                                typeall[p1][p2][p3][p4][p5][p6][p7]=BLOCK5;
+                                            }
+                                        }
+                                        //黑"冲"5
+                                        if(rh==5 && rb==0){
+                                            if(typeall[p1][p2][p3][p4][p5][p6][p7]==0){
+                                                typeall[p1][p2][p3][p4][p5][p6][p7]=block5;
+                                            }
+                                        }
+                                        //白"冲"4
+                                        if(rh==0 && rb==4){
+                                            if(typeall[p1][p2][p3][p4][p5][p6][p7]==0){
+                                                typeall[p1][p2][p3][p4][p5][p6][p7]=BLOCK4;
+                                            }
+                                        }
+                                        //黑"冲"4
+                                        if(rh==4 && rb==0){
+                                            if(typeall[p1][p2][p3][p4][p5][p6][p7]==0){
+                                                typeall[p1][p2][p3][p4][p5][p6][p7]=block4;
+                                            }
+                                        }
+                                        //白眠3
+                                        if(rh==0 && rb==3){
+                                            if(typeall[p1][p2][p3][p4][p5][p6][p7]==0){
+                                                typeall[p1][p2][p3][p4][p5][p6][p7]=BLOCK3;
+                                            }
+                                        }
+                                        //黑眠3
+                                        if(rh==3 && rb==0){
+                                            if(typeall[p1][p2][p3][p4][p5][p6][p7]==0){
+                                                typeall[p1][p2][p3][p4][p5][p6][p7]=block3;
+                                            }
+                                        }
+                                        //白眠2
+                                        if(rh==0 && rb==2){
+                                            if(typeall[p1][p2][p3][p4][p5][p6][p7]==0){
+                                                typeall[p1][p2][p3][p4][p5][p6][p7]=BLOCK2;
+                                            }
+                                        }
+                                        //黑眠2
+                                        if(rh==2 && rb==0){
+                                            if(typeall[p1][p2][p3][p4][p5][p6][p7]==0){
+                                                typeall[p1][p2][p3][p4][p5][p6][p7]=block2;
+                                            }
+                                        }
+                                    }
+                                    else if(p3!=3 && p7==3){
+                                        //白"冲"5
+                                        if(lh==0 && lb==5){
+                                            if(typeall[p1][p2][p3][p4][p5][p6][p7]==0){
+                                                typeall[p1][p2][p3][p4][p5][p6][p7]=BLOCK5;
+                                            }
+                                        }
+                                        //黑"冲"5
+                                        if(lh==5 && lb==0){
+                                            if(typeall[p1][p2][p3][p4][p5][p6][p7]==0){
+                                                typeall[p1][p2][p3][p4][p5][p6][p7]=block5;
+                                            }
+                                        }
+                                        //白"冲"4
+                                        if(lh==0 && lb==4){
+                                            if(typeall[p1][p2][p3][p4][p5][p6][p7]==0){
+                                                typeall[p1][p2][p3][p4][p5][p6][p7]=BLOCK4;
+                                            }
+                                        }
+                                        //黑"冲"4
+                                        if(lh==4 && lb==0){
+                                            if(typeall[p1][p2][p3][p4][p5][p6][p7]==0){
+                                                typeall[p1][p2][p3][p4][p5][p6][p7]=block4;
+                                            }
+                                        }
+                                        //白眠3
+                                        if(lh==0 && lb==3){
+                                            if(typeall[p1][p2][p3][p4][p5][p6][p7]==0){
+                                                typeall[p1][p2][p3][p4][p5][p6][p7]=BLOCK3;
+                                            }
+                                        }
+                                        //黑眠3
+                                        if(lh==3 && lb==0){
+                                            if(typeall[p1][p2][p3][p4][p5][p6][p7]==0){
+                                                typeall[p1][p2][p3][p4][p5][p6][p7]=block3;
+                                            }
+                                        }
+                                        //白眠2
+                                        if(lh==0 && lb==2){
+                                            if(typeall[p1][p2][p3][p4][p5][p6][p7]==0){
+                                                typeall[p1][p2][p3][p4][p5][p6][p7]=BLOCK2;
+                                            }
+                                        }
+                                        //黑眠2
+                                        if(lh==2 && lb==0){
+                                            if(typeall[p1][p2][p3][p4][p5][p6][p7]==0){
+                                                typeall[p1][p2][p3][p4][p5][p6][p7]=block2;
+                                            }
+                                        }
+                                    }
+                                }
+                                else{//无边界
+                                    //白冲5
+                                    if((lh==0&&lb==5)||(rh==0&&rb==5)){
+                                        if(typeall[p1][p2][p3][p4][p5][p6][p7]==0){
+                                            typeall[p1][p2][p3][p4][p5][p6][p7]==BLOCK5;
+                                        }
+                                    }
+                                    //黑冲5
+                                    if((lh==5&&lb==0)||(rh==5&&rb==0)){
+                                        if(typeall[p1][p2][p3][p4][p5][p6][p7]==0){
+                                            typeall[p1][p2][p3][p4][p5][p6][p7]=block5;
+                                        }
+                                    }
+                                    //白冲4
+                                    if((lh==0&&lb==4)&&(rh==0&&rb==4)){
+                                        if(typeall[p1][p2][p3][p4][p5][p6][p7]==0){
+                                            typeall[p1][p2][p3][p4][p5][p6][p7]=BLOCK4;
+                                        }
+                                    }
+                                    //黑冲4
+                                    if((lh==4&&lb==0)||(rh==4&&rb==0)){
+                                        if(typeall[p1][p2][p3][p4][p5][p6][p7]==0){
+                                            typeall[p1][p2][p3][p4][p5][p6][p7]=block4;
+                                        }
+                                    }
+                                    //白眠3
+                                    if((lh==0&&lb==3)||(rh==0&&rb==3)){
+                                        if(typeall[p1][p2][p3][p4][p5][p6][p7]==0){
+                                            typeall[p1][p2][p3][p4][p5][p6][p7]=BLOCK3;
+                                        }
+                                    }
+                                    //黑眠3
+                                    if((lh==3&&lb==0)||(rh==3&&rb==0)){
+                                        if(typeall[p1][p2][p3][p4][p5][p6][p7]==0){
+                                            typeall[p1][p2][p3][p4][p5][p6][p7]=block3;
+                                        }
+                                    }
+                                    //白眠2
+                                    if((lh==0&&lb==2)||(rh==0&&rb==2)){
+                                        if(typeall[p1][p2][p3][p4][p5][p6][p7]==0){
+                                            typeall[p1][p2][p3][p4][p5][p6][p7]=BLOCK2;
+                                        }
+                                    }
+                                    //黑眠2
+                                    if((lh==2&&lb==0)||(rh==2&&rb==0)){
+                                        if(typeall[p1][p2][p3][p4][p5][p6][p7]==0){
+                                            typeall[p1][p2][p3][p4][p5][p6][p7]=block2;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
-            else if(str[i] == 'b')
-                str[i] = 'w';
         }
     }
 
-    int psame[2]={0, 0};
-    int pempty[2]={0, 0};
-    int jsame[2]={0, 0};
-    int jempty[2]={0, 0};
+    //白活5
+    typeall[0][2][2][2][2][2][0] = FREE5;
+    //黑活5
+    typeall[0][1][1][1][1][1][0] = free5;
+    //白活4
+    typeall[0][2][2][2][2][0][0] = FREE4;
+    typeall[0][0][2][2][2][2][0] = FREE4;
+    typeall[0][2][0][2][2][2][0] = FREE4;
+    typeall[0][2][2][0][2][2][0] = FREE4;
+    typeall[0][2][2][2][0][2][0] = FREE4;
+    //黑活4
+    typeall[0][1][1][1][1][0][0] = free4;
+    typeall[0][0][1][1][1][1][0] = free4;
+    typeall[0][1][0][1][1][1][0] = free4;
+    typeall[0][1][1][0][1][1][0] = free4;
+    typeall[0][1][1][1][0][1][0] = free4;
+    //白活3
+    typeall[0][2][2][2][0][0][0] = FREE3;
+    typeall[0][0][2][2][2][0][0] = FREE3;
+    typeall[0][0][0][2][2][2][0] = FREE3;
+    typeall[0][2][0][2][2][0][0] = FREE3;
+    typeall[0][0][2][0][2][2][0] = FREE3;
+    typeall[0][2][2][0][2][0][0] = FREE3;
+    typeall[0][0][2][2][0][2][0] = FREE3;
+    //黑活3
+    typeall[0][1][1][1][0][0][0] = free3;
+    typeall[0][0][1][1][1][0][0] = free3;
+    typeall[0][0][0][1][1][1][0] = free3;
+    typeall[0][1][0][1][1][0][0] = free3;
+    typeall[0][0][1][0][1][1][0] = free3;
+    typeall[0][1][1][0][1][0][0] = free3;
+    typeall[0][0][1][1][0][1][0] = free3;
+    //白活2
+    typeall[0][2][2][0][0][0][0] = free3;
+    typeall[0][0][2][2][0][0][0] = free3;
+    typeall[0][0][0][2][2][0][0] = free3;
+    typeall[0][0][0][0][2][2][0] = free3;
+    typeall[0][2][0][2][0][0][0] = free3;
+    typeall[0][0][2][0][2][0][0] = free3;
+    typeall[0][0][0][2][0][2][0] = free3;
+    //黑活2
+    typeall[0][1][1][0][0][0][0] = free3;
+    typeall[0][0][1][1][0][0][0] = free3;
+    typeall[0][0][0][1][1][0][0] = free3;
+    typeall[0][0][0][0][1][1][0] = free3;
+    typeall[0][1][0][1][0][0][0] = free3;
+    typeall[0][0][1][0][1][0][0] = free3;
+    typeall[0][0][0][1][0][1][0] = free3;
+    //白活1
+    typeall[0][2][0][0][0][0][0] = free3;
+    typeall[0][0][2][0][0][0][0] = free3;
+    typeall[0][0][0][2][0][0][0] = free3;
+    typeall[0][0][0][0][2][0][0] = free3;
+    typeall[0][0][0][0][0][2][0] = free3;
+    //黑活1
+    typeall[0][1][0][0][0][0][0] = free3;
+    typeall[0][0][1][0][0][0][0] = free3;
+    typeall[0][0][0][1][0][0][0] = free3;
+    typeall[0][0][0][0][1][0][0] = free3;
+    typeall[0][0][0][0][0][1][0] = free3;
+}
 
-    int t;
-    //向左
-    for(t=5; t>=0&&str[t]=='b'; psame[0]++,t--);
-    for(; t>=0&&str[t]==' '; pempty[0]++,t--);
-    for(; t>=0&&str[t]=='b'; jsame[0]++,t--);
-    for(; t>=0&&str[t]==' '; jempty[0]++,t--);
-    //向右
-    for(t=7; t<=12&&str[t]=='b'; psame[1]++,t++);
-    for(; t<=12&&str[t]==' '; pempty[1]++,t++);
-    for(; t<=12&&str[t]=='b'; jsame[1]++,t++);
-    for(; t<=12&&str[t]==' '; jempty[1]++,t++);
+//需要模板
+void Game::evaluate(int (*b)[21])
+{
+    //权重设计
+    int weight[21]={0,1,-2,1,-2,25,-50,25,-50,400,-800,400,-1000,
+                   5000,-10000,5000,-10000,100000,-500000,1000000,-10000000};
 
-    //开始判断
-    if(pempty[0]+pempty[1] == 0){
-        if(psame[0]+psame[1]==6)
-            board_score[row][col]+=100000;      //可以获胜了
-        else board_score[row][col]+=0;
+    int type;
+    int state[4][21];
+    memset(state, 0, sizeof(state));
+    int STATE[21];
+    memset(STATE, 0, sizeof(STATE));
+
+    int B[23][23];//多出两行两列
+    for(int i=0; i<23; i++){
+        B[0][i]=3;
+        B[22][i]=3;
+        B[i][0]=3;
+        B[i][22]=3;
     }
-    else{
-        //1个
-        if(psame[0]+psame[1] == 0){
-            if(pempty[0]==0 || pempty[1]==0){   //冲1
-                board_score[row][col]++;
-            }
-            else board_score[row][col]+=2;      //活1
+    for(int i=0; i<21; i++){
+        for(int j=0; j<21; j++){
+            B[i+1][j+1] = b[i][j];
         }
-        //2个
-        else{}
     }
-    //2个
-    if(psame[0]+psame[1] == 1){
-        if(pempty[0]+pempty[1]>0){}
+    //判断横向棋形
+    for(int i=0; i<21; i++){
+        for(int j=0; j<17; j++){
+           type = typeall[B[i][j]][B[i][j+1]][B[i][j+2]][B[i][j+3]][B[i][j+4]][B[i][j+5]][B[i][j+6]];
+           state[0][type]++;
+        }
     }
+    //竖向
+    for(int j=0; j<21; j++){
+        for(int i=0; i<17; i++){
+            type = typeall[B[i][j]][B[i+1][j]][B[i+2][j]][B[i+3][j]][B[i+4][j]][B[i+5][j]][B[i+6][j]];
+            state[1][type]++;
+        }
+    }
+    //'\'
+    for(int i=0; i<17; i++){
+        for(int j=0; j<17; j++){
+            type = typeall[B[i][j]][B[i+1][j+1]][B[i+2][j+2]][B[i+3][j+3]][B[i+4][j+4]][B[i+5][j+5]][B[i+6][j+6]];
+            state[2][type]++;
+        }
+    }
+    //'/'
+    for(int i=0; i<17; i++){
+        for(int j=6; j<23; j++){
+            type = typeall[B[i][j]][B[i+1][j-1]][B[i+2][j-2]][B[i+3][j-3]][B[i+4][j-4]][B[i+5][j-5]][B[i+6][j-6]];
+            state[3][type]++;
+        }
+    }
+
+    int score = 0;
+
 }
