@@ -94,32 +94,40 @@ void p_pwindow::initgame(GameType type, bool chess){
     else{
         button_stop->hide();
     }
+    //初始化对应的游戏模式
+    game->startgame(type);
 }
 
 //
 //界面与game交会函数（该函数即要用到game里面的数据也要用到界面的数据）
 void p_pwindow::chessbyperson()
 {
+    bool flag = false;
     if(clickPosCol != -1 && clickPosRow != -1 &&
-            game->board[clickPosRow][clickPosCol] == 0){
+            (game->board[clickPosRow][clickPosCol]==0||game->board[clickPosRow][clickPosCol]==4)){
         //考虑落子
-        if(game->black_white && game->boardban[clickPosRow][clickPosCol] == false){
+        if(game->black_white){
             //放黑子记为1
+            if(game->board[clickPosRow][clickPosCol]==4 && game->black_white)
+                flag = true;            //下在禁手点位了
             game->board[clickPosRow][clickPosCol] = 1;
         }
         else
             //放白子记为-1
-            game->board[clickPosRow][clickPosCol] = -1;
+            game->board[clickPosRow][clickPosCol] = 2;
+        update();
         //判断输赢
         game->gamestate = game->win_lose(clickPosRow, clickPosCol);
+        if(flag)
+            game->gamestate = WHITEWIN;             //如果黑方下在禁手点位，白方获胜
         if(game->gamestate != NOWINNER && game->gamestate != STALEMATE){//胜负已分
             endgame(game->gamestate); //游戏结束
         }
         game->black_white = !(game->black_white);
     }
     else return;
-    game->checkboard(); //checkboard()出错
-    update();
+    if(game->startban && game->black_white)      //如果开启禁手，并且是黑子的回合，那就需要进行禁手检查
+        game->checkboard(game->board);
 }
 //还需要处理结束后的棋盘
 void p_pwindow::endgame(GameState state)
@@ -150,11 +158,11 @@ void p_pwindow::paintEvent(QPaintEvent *event)
                              QPointF(MARGIN + INTERVEL*20, MARGIN + INTERVEL*i));
         }
 
-    //画tracking点
+    //画tracking点。不管有没有禁手，直接画。
     QBrush brush;
     brush.setStyle(Qt::SolidPattern);
     if(clickPosRow>=0 && clickPosRow<=GRID && clickPosCol>=0 &&
-            clickPosCol<=GRID && game->boardban[clickPosRow][clickPosCol]==0){
+            clickPosCol<=GRID){
         if(game->black_white)
             brush.setColor(Qt::black);
         else
@@ -175,7 +183,7 @@ void p_pwindow::paintEvent(QPaintEvent *event)
                                     MARGIN+i*INTERVEL-CHESS_SIZE,
                                     CHESS_SIZE*2, CHESS_SIZE*2);
             }
-            else if(game->board[i][j] == -1){
+            else if(game->board[i][j] == 2){
                 brush.setColor(Qt::white);
                 painter.setBrush(brush);
                 painter.drawEllipse(MARGIN+j*INTERVEL-CHESS_SIZE,
@@ -183,7 +191,7 @@ void p_pwindow::paintEvent(QPaintEvent *event)
                                     CHESS_SIZE*2, CHESS_SIZE*2);
             }
             //画禁手
-            else if(game->black_white == 1 && game->boardban[i][j] == true){
+            else if(game->black_white == 1 && game->board[i][j] == 4 && game->banprompt){
 
                 brush.setColor(Qt::red);
                 painter.setBrush(brush);
@@ -223,7 +231,7 @@ void p_pwindow::mouseMoveEvent(QMouseEvent *event)
             clickPosCol = col;
             clickPosRow = row;
             if(game->board[clickPosRow][clickPosCol] != 1 ||
-                    game->board[clickPosRow][clickPosCol] != -1){
+                    game->board[clickPosRow][clickPosCol] != 2){
                 SelectPos = true;
             }
         }
@@ -233,7 +241,7 @@ void p_pwindow::mouseMoveEvent(QMouseEvent *event)
             clickPosCol = col + 1;
             clickPosRow = row;
             if(game->board[clickPosRow][clickPosCol] != 1 ||
-                    game->board[clickPosRow][clickPosCol] != -1){
+                    game->board[clickPosRow][clickPosCol] != 2){
                 SelectPos = true;
             }
         }
@@ -243,7 +251,7 @@ void p_pwindow::mouseMoveEvent(QMouseEvent *event)
             clickPosCol = col;
             clickPosRow = row + 1;
             if(game->board[clickPosRow][clickPosCol] != 1 ||
-                    game->board[clickPosRow][clickPosCol] != -1){
+                    game->board[clickPosRow][clickPosCol] != 2){
                 SelectPos = true;
             }
         }
@@ -253,7 +261,7 @@ void p_pwindow::mouseMoveEvent(QMouseEvent *event)
             clickPosCol = col + 1;
             clickPosRow = row + 1;
             if(game->board[clickPosRow][clickPosCol] != 1 ||
-                    game->board[clickPosRow][clickPosCol] != -1){
+                    game->board[clickPosRow][clickPosCol] != 2){
                 SelectPos = true;
             }
         }
@@ -269,12 +277,17 @@ void p_pwindow::mouseReleaseEvent(QMouseEvent *event)
     if(SelectPos == false)
         return;
     else SelectPos == false;
-
-    //黑子点禁手位是没有用滴,白子可以
-    if(game->black_white == 1 && game->board[clickPosRow][clickPosCol] == true){
-        return;
+    if(clickPosRow != -1 && clickPosCol != -1 && game->board[clickPosRow][clickPosCol] != 1
+            && game->board[clickPosRow][clickPosCol] != 2)              //点位有子了就不能在落子了。
+        chessbyperson();
+    else return;
+    //下完后，要重新绘制
+    update();
+    if(game->gametype == MAN_TO_AI){
+        setMouseTracking(false);
+        game->chessbyai();
+        setMouseTracking(true);
+        update();
     }
-    chessbyperson();
-
 }
 

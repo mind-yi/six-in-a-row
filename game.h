@@ -3,6 +3,7 @@
 //https://blog.csdn.net/pige666/article/details/106378477?utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-2.channel_param&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-2.channel_param
 //（五子棋基本知识）
 #include <QString>
+#include <QPoint>
 const int BOARD = 700;  //棋盘的大小
 const int GRID = 20;    //格子的个数
 const int CHESS_SIZE = 15;  //棋子的半径
@@ -12,6 +13,8 @@ const int MARGIN = 40;      //边缘
 const int INTERVEL = BOARD/20;  //棋子间隔
 const int INDEX = INTERVEL*0.4;  //索引范围
 const int AI_THINK = 800;   //AI思考时间
+
+#define INTMAX 1073741824
 
 #define OTHER 0
 #define FREE1 1     //白
@@ -43,12 +46,27 @@ enum GameType{
 enum GameState{
     PlAYING,        //开始游戏
     STALEMATE,      //和棋
-
     BLACK_WIN,
     BLACK_LOSE,
     WHITEWIN,
     WHITELOSE,
     NOWINNER
+};
+struct EVALUATION
+{
+    int score;          //评估的分数
+    GameState result;
+    int STATE[21];      //共21种状态
+};
+struct POINT
+{
+    QPoint pos[10];     //10个优先点的坐标
+    int score[10];
+};
+struct DECISION
+{
+    QPoint pos;
+    int evalscore;
 };
 class Game{
 
@@ -57,13 +75,16 @@ public:
     void usergame();    //双人
     void compgame();    //人机对战
     void comp_comp();   //机机对战
-    void startgame(GameType type);     //初始化
+    void startgame(GameType type);     //初始化,initgame调用
     GameState win_lose(int row, int col);   //判断输赢
-    void checkboard();          //检查棋盘
+    void checkboard(int (*b)[GRID+1]);          //检查棋盘
     void processforbid(QString &str, int col, int row); //处理禁手
-    void chessbyai(QString &str, int row, int col);       //检查每条连线的可下性，checkboard()调用
+    void chessbyai();           //区别于chessbyperson,是AI下棋了
     void initai();
-    void evaluate(int (*b)[21]);        //评估函数:对board的空位进行分值评估
+    EVALUATION evaluate(int (*b)[21]);        //评估函数:对board的空位进行分值评估
+    POINT seekpoint(int (*b)[21], bool chesstype);          //AI模式调用
+    int analyse(int (*b)[21], int depth, int alpha, int beta);
+    void copyBoard(int (*s)[21], int (*d)[21]);
 
 public:
     GameState gamestate;     //状态
@@ -84,6 +105,7 @@ public:
      *
      */
     int board_score[21][21];
+    DECISION decision;
     //目前没有悔棋的功能（因为没有上一步棋盘的信息）
 };
 #endif // GAME_H

@@ -1,4 +1,5 @@
 #include "game.h"
+#include <QDebug>
 
 Game::Game()
 {
@@ -31,8 +32,8 @@ GameState Game::win_lose(int row, int col)
 {
     int b, flag = 0;
     if(black_white)
-        b = 1;
-    else b = 0;
+        b = 1;              //黑棋
+    else b = 2;             //白棋
     //上左斜"\"
     for(int i=row,j=col; i>=row-5; i--,j--){
         if(i<0||j<0||i>GRID||j>GRID||board[i][j] != b){
@@ -149,14 +150,18 @@ GameState Game::win_lose(int row, int col)
 }
 
 //找出禁手点位
-void Game::checkboard()
+//棋盘应为虚拟棋盘
+void Game::checkboard(int (*b)[GRID+1])
 {
+    //每次调用前都应该初始化
+    four_ban = 0;
+    five_ban = 0;
     //判断禁手
     //遍历每一个空位
     for(int i=0; i<=GRID; i++){
         for(int j=0; j<=GRID; j++){
             //只处理了空位
-            if(board[i][j] != 0) continue;
+            if(b[i][j] != 0) continue;
             four_ban = 0;
             five_ban = 0;
             //左斜"\"
@@ -166,27 +171,22 @@ void Game::checkboard()
                     str += "|";
                 }
                 else if(ii == i&&jj == j){
-                    if(black_white) str += "B";
-                    else str += "W";
+                    str += "B";
                 }
-                else if(board[ii][jj] == -1){
+                else if(b[ii][jj] == -1){
                     str += "w";
                 }
-                else if(board[ii][jj] == 0){
+                else if(b[ii][jj] == 0){
                     str += " ";
                 }
-                else if(board[ii][jj] == 1){
+                else if(b[ii][jj] == 1){
                     str += "b";
                 }
                 else continue;
             }
             //处理左斜"\"
-            if(black_white == true && startban == true)
-                processforbid(str, j, i);
-            if(gametype == MAN_TO_AI){  //AI下棋了
-                //关键是要统计该点的分数值
-                chessbyai(str, i, j);
-            }
+            processforbid(str, j, i);
+
             //竖线"|"
             str = "";
             for(int ii=i-6; ii<=i+6; ii++){
@@ -194,23 +194,21 @@ void Game::checkboard()
                     str += "|";
                 }
                 else if(ii == i){
-                    if(black_white) str += "B";
-                    else str += "W";
+                    str += "B";
                 }
-                else if(board[ii][j] == -1){
+                else if(b[ii][j] == -1){
                     str += "w";
                 }
-                else if(board[ii][j] == 0){
+                else if(b[ii][j] == 0){
                     str += " ";
                 }
-                else if(board[ii][j] == 1){
+                else if(b[ii][j] == 1){
                     str += "b";
                 }
                 else continue;
             }
             //处理"|"
-            if(black_white == true && startban == true)
-                processforbid(str, j, i);
+            processforbid(str, j, i);
             //右斜"/"
             str = "";
             for(int ii=i-6, jj=j+6; ii<=i+6; ii++, jj--){
@@ -218,23 +216,21 @@ void Game::checkboard()
                     str += "|";
                 }
                 else if(ii == i&&jj == j){
-                    if(black_white) str += "B";
-                    else str += "W";
+                    str += "B";
                 }
-                else if(board[ii][jj] == -1){
+                else if(b[ii][jj] == -1){
                     str += "w";
                 }
-                else if(board[ii][jj] == 0){
+                else if(b[ii][jj] == 0){
                     str += " ";
                 }
-                else if(board[ii][jj] == 1){
+                else if(b[ii][jj] == 1){
                     str += "b";
                 }
                 else continue;
             }
             //处理"/"
-            if(black_white == true && startban == true)
-                processforbid(str, j, i);
+            processforbid(str, j, i);
             //横线"-"
             str = "";
             for(int jj=j-6; jj<=j+6; jj++){
@@ -242,40 +238,31 @@ void Game::checkboard()
                     str += "|";
                 }
                 else if(jj == j){
-                    if(black_white) str += "B";
-                    else str += "W";
+                    str += "B";
                 }
-                else if(board[i][jj] == -1){
+                else if(b[i][jj] == -1){
                     str += "w";
                 }
-                else if(board[i][jj] == 0){
+                else if(b[i][jj] == 0){
                     str += " ";
                 }
-                else if(board[i][jj] == 1){
+                else if(b[i][jj] == 1){
                     str += "b";
                 }
                 else continue;
             }
             //横线"-"
-            if(black_white == true && startban == true)
-                processforbid(str, j, i);
+            processforbid(str, j, i);
             //到此，所有的连线类型处理完毕
-            if(i == 19 && j == 5){
-            //    qDebug()<<"game->four_ban="<<game->four_ban;
-            //    qDebug()<<"board["<<i<<"]["<<j<<"]="<<game->board[i][j]<<endl;
-            }
             if(four_ban >1 || five_ban >1){
-                boardban[i][j] = true;
-            }
-            else {
-                boardban[i][j] = false;
+                b[i][j] = 4;
             }
             //禁手信息录入完毕
         }
     }
 }
 
-//处理禁手
+//禁手程序有问题！！！
 void Game::processforbid(QString &str, int col, int row)
 //https://blog.csdn.net/kidults/article/details/80075896(QString 用法)
 //若是连六就直接赢了，不再构成禁手
@@ -398,9 +385,18 @@ void Game::processforbid(QString &str, int col, int row)
 //计算对自己最有优势的情况
 //https://github.com/lihongxun945/myblog/issues/14#issue-341420244 （剪枝)
 //https://blog.csdn.net/livingsu/article/details/104539741 (评估)
-void Game::chessbyai(QString &str, int row, int col)
+void Game::chessbyai()
 {
-
+    qDebug() << "AI开始下\n";
+    int b[21][21];
+    copyBoard(board, b);
+    int t = analyse(b, 4, -INTMAX, INTMAX);
+    qDebug() << "black_white = "<<black_white<<endl;
+    if(black_white){
+        board[decision.pos.x()][decision.pos.y()] = 1;
+    }
+    else board[decision.pos.x()][decision.pos.y()] = 2;
+    black_white = !black_white;
 }
 
 void Game::initai()
@@ -723,12 +719,16 @@ void Game::initai()
 }
 
 //需要模板
-void Game::evaluate(int (*b)[21])
+//思考要不要考虑杀棋
+EVALUATION Game::evaluate(int (*b)[21])
 {
     //权重设计
-    int weight[21]={0,1,-2,1,-2,25,-50,25,-50,400,-800,400,-1000,
-                   5000,-10000,5000,-10000,100000,-500000,1000000,-10000000};
-
+    //AI下白棋
+    int weight_b[21]={0,1,-2,1,-2,25,-50,25,-50,400,-800,400,-1000,
+                      5000,-10000,5000,-10000,100000,-500000,1000000,-10000000};
+    //AI下黑棋
+    int weight_h[21]={0,-2,1,-2,1,-50,25,-50,25,-800,400,-1000,400,
+                     -10000,5000,-10000,5000,-500000,100000,-10000000,1000000};
     int type;
     int state[4][21];
     memset(state, 0, sizeof(state));
@@ -775,7 +775,158 @@ void Game::evaluate(int (*b)[21])
             state[3][type]++;
         }
     }
-
+    EVALUATION eval;
     int score = 0;
-
+    for(int i=1; i<21; i++){
+        if(black_white == false)
+        //对于AI下白棋
+            score += (state[0][i]+state[1][i]+state[2][i]+state[3][i])*weight_b[i];
+        //对于AI下黑棋
+        else
+            score += (state[0][i]+state[1][i]+state[2][i]+state[3][i])*weight_h[i];
+        if(i==BWIN){    //黑赢
+            eval.result = BLACK_WIN;
+        }
+        if(i==WWIN){    //白赢
+            eval.result = WHITEWIN;
+        }
+    }
+    eval.score = score;
+    return eval;
 }
+
+//该白子下时，为白子找最佳位置
+//该黑子下时，为黑子找最佳位置
+//如果有问题，只可能是落子评估那块儿的问题
+POINT Game::seekpoint(int (*b)[21], bool chesstype) //chesstype: 要为那种子找，1表示黑，0表示白
+{
+    POINT best;     //最好的点
+    bool B[21][21];     //该空位是否被选中
+    memset(B, 0, sizeof(B));
+    int worth[21][21];      //记录点位的价值
+
+    for(int i=0 ;i<=GRID; i++){
+        for(int j=0; j<=GRID; j++){        //每个空点附近延伸4个深度，不越界
+            if(b[i][j]!=0 && b[i][j]!=4){       //首先要为非空
+                for(int k=-4; k<=4; k++){
+                    if(i+k>=0&&i+k<=GRID){
+                        if(chesstype && startban && b[i+k][j]==4)
+                            B[i+k][j] = false;
+                        else B[i+k][j] = true;
+                        if(j+k>=0&&j+k<=GRID){
+                            if(chesstype && startban && b[i+k][j+k]==4)
+                                B[i+k][j+k] = false;
+                            else B[i+k][j+k]=true;
+                        }
+                        if(j-k>=0&&j-k<=GRID){
+                            if(chesstype && startban && b[i+k][j-k]==4)
+                                B[i+k][j-k] = false;
+                            else B[i+k][j-k]=true;
+                        }
+                    }
+                    if(j+k>=0&&j+k<15){
+                        if(chesstype && startban && b[i][j+k]==4)
+                            B[i][j+k] = false;
+                        else B[i][j+k]=true;
+                    }
+                }
+            }
+        }
+    }
+    //为每个可能落子的点进行落子后的局势分值评估
+    for(int i=0; i<=GRID; i++){
+        for(int j=0; j<=GRID; j++){
+            worth[i][j] = -INTMAX;
+            if(b[i][j]==0 && B[i][j]==true){
+                if(chesstype){    //黑子
+                    b[i][j] = 1;
+                    worth[i][j] = evaluate(b).score;
+                }
+                else{
+                    b[i][j] = 2;
+                    worth[i][j] = evaluate(b).score;
+                }
+                b[i][j] = 0;    //还原
+            }
+        }
+    }
+    int w;
+    for(int k=0; k<10; k++){
+        w = -INTMAX;
+        for(int i=0; i<=GRID; i++){
+            for(int j=0; j<=GRID; j++){
+                if(worth[i][j]>w){
+                    w=worth[i][j];
+                    QPoint tmp(i, j);
+                    best.pos[k] = tmp;
+                }
+            }
+        }
+        best.score[k] = w;
+        worth[best.pos[k].x()][best.pos[k].y()] = -INTMAX;
+    }
+    return best;
+}
+
+int Game::analyse(int (*b)[21], int depth, int alpha, int beta)
+{
+    GameState RESULT = evaluate(b).result;      //对当前的局势进行分析，如果有胜负，就返回了。
+    if(depth == 0 || RESULT == BLACK_WIN || RESULT == WHITEWIN){
+        if(depth==0){
+            POINT p;
+            p = seekpoint(b, black_white);
+            return p.score[0];
+        }
+        else return evaluate(b).score;
+    }
+    else if(depth%2==0){
+        int sameb[21][21];
+        copyBoard(b, sameb);
+        POINT p= seekpoint(sameb, black_white);
+
+        for(int i=0; i<10; i++){
+            if(black_white)
+                sameb[p.pos[i].x()][p.pos[i].y()] = 1;
+            else sameb[p.pos[i].x()][p.pos[i].y()] = 2;
+            int a=analyse(sameb, depth-1, alpha, beta);
+            sameb[p.pos[i].x()][p.pos[i].y()] = 0;      //还原
+            if(a > alpha){
+                alpha = a;
+                if(depth==4){
+                    decision.pos.setX(p.pos[i].x());
+                    decision.pos.setY(p.pos[i].y());
+                    decision.evalscore = a;             //返回了最深层对自己最有利的情况
+                }
+            }
+            if(beta <= alpha) break;
+        }
+        return alpha;
+    }
+    else{//敌方决策层
+        int  sameb[21][21];
+        //对吗？？？
+        copyBoard(b, sameb);
+        POINT p = seekpoint(sameb, !black_white);
+
+        for(int i=0; i<10; i++){
+            if(black_white)
+                sameb[p.pos[i].x()][p.pos[i].y()] = 2;
+            else sameb[p.pos[i].x()][p.pos[i].y()] = 1;
+            int a = analyse(sameb, depth-1, alpha, beta);
+            sameb[p.pos[i].x()][p.pos[i].y()] = 0;
+            if(a < beta) beta = a;
+            if(beta<=alpha) break;
+        }
+        return beta;
+    }
+}
+
+void Game::copyBoard(int (*s)[GRID+1], int (*d)[GRID+1])
+{
+    for(int i=0; i<=GRID; i++){
+        for(int j=0; j<=GRID; j++){
+            d[i][j] = s[i][j];
+        }
+    }
+}
+
