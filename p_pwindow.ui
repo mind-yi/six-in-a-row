@@ -14,7 +14,7 @@
    <bool>true</bool>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>六子棋</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <property name="mouseTracking">
@@ -30,8 +30,55 @@
      <height>26</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menu_choice">
+    <property name="title">
+     <string>选项</string>
+    </property>
+    <addaction name="action_undo"/>
+    <addaction name="action_restart"/>
+    <addaction name="action_return"/>
+   </widget>
+   <widget class="QMenu" name="menu_hint">
+    <property name="title">
+     <string>提示</string>
+    </property>
+    <addaction name="action_dohint"/>
+    <addaction name="action_undohint"/>
+   </widget>
+   <addaction name="menu_choice"/>
+   <addaction name="menu_hint"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
+  <action name="action_undo">
+   <property name="text">
+    <string>悔棋</string>
+   </property>
+  </action>
+  <action name="action_stale">
+   <property name="text">
+    <string>求和</string>
+   </property>
+  </action>
+  <action name="action_restart">
+   <property name="text">
+    <string>重新开始</string>
+   </property>
+  </action>
+  <action name="action_dohint">
+   <property name="text">
+    <string>开启禁手提示</string>
+   </property>
+  </action>
+  <action name="action_undohint">
+   <property name="text">
+    <string>关闭禁手提示</string>
+   </property>
+  </action>
+  <action name="action_return">
+   <property name="text">
+    <string>返回菜单</string>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections/>

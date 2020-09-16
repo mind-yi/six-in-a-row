@@ -5,6 +5,7 @@
 #-------------------------------------------------
 
 QT       += core gui
+QT += network
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -27,15 +28,31 @@ SOURCES += \
         main.cpp \
         mainwindow.cpp \
     game.cpp \
-    p_pwindow.cpp
+    p_pwindow.cpp \
+    gameplayer.cpp \
+    p_awindow.cpp \
+    a_awindow.cpp \
+    c_swindow.cpp
 
 HEADERS += \
         mainwindow.h \
     game.h \
-    p_pwindow.h
+    p_pwindow.h \
+    gameplayer.h \
+    p_awindow.h \
+    a_awindow.h \
+    c_swindow.h
 
 FORMS += \
         mainwindow.ui \
-    p_pwindow.ui
+    p_pwindow.ui \
+    p_awindow.ui \
+    a_awindow.ui \
+    c_swindow.ui
 
 CONFIG += C++11
+
+QT += multimedia
+
+RESOURCES += \
+    picture_for_six.qrc

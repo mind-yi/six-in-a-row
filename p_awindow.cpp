@@ -1,5 +1,5 @@
-#include "p_pwindow.h"
-#include "ui_p_pwindow.h"
+#include "p_awindow.h"
+#include "ui_p_awindow.h"
 
 #include <QPainter>
 #include <QMouseEvent>
@@ -9,113 +9,69 @@
 #include <QMessageBox>
 #include <QLabel>
 #include <QPushButton>
-
-p_pwindow::p_pwindow(QWidget *parent) :
+p_awindow::p_awindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::p_pwindow)
+    ui(new Ui::p_awindow)
 {
     ui->setupUi(this);
 
     game = new Game;
-    //设置窗口大小
-    this->setFixedSize(820, 780);
-    this->move(400, 125);
-
 }
 
-p_pwindow::~p_pwindow()
+p_awindow::~p_awindow()
 {
     delete ui;
     delete game;
 }
-//初始化界面并调用游戏初始化函数
-void p_pwindow::initgameinterface(bool ban){
-    //是否是禁手模式
-    game->startban = ban;
+
+void p_awindow::initgameinterface(bool ban)
+{
     banfrommain = ban;
-    //开启监听
-    setMouseTracking(true);
-    //...
-    //实现“选项”功能
-        //悔棋
-    connect(ui->action_undo, &QAction::triggered,
-            [=](){
-            //需要知道最新的落子点（应该在game里有记录）
-            game->board[game->player1.newpoint.x()][game->player1.newpoint.y()] = game->player1.lastestinfor;
-            game->board[game->player2.newpoint.x()][game->player2.newpoint.y()] = game->player2.lastestinfor;
-            game->player1.newpoint.setX(game->player1.lastpoint.x());
-            game->player1.newpoint.setY(game->player1.lastpoint.y());
-            game->player2.newpoint.setX(game->player2.lastpoint.x());
-            game->player2.newpoint.setY(game->player2.lastpoint.y());
-
-            update();
-    });
-        //重新开始
-    connect(ui->action_restart, &QAction::triggered,
-            [=](){
-            game->startgame(MAN_TO_MAN, banfrommain);
-            QMessageBox::warning(this, "提示", "游戏重新开始");
-            //初始化选项
-            ui->action_undo->setEnabled(false);
-            ui->action_restart->setEnabled(false);
-            ui->action_dohint->setEnabled(true);
-            ui->action_undohint->setEnabled(true);
-            //开启监听
-            setMouseTracking(true);
-    });
-    //初始化“禁手”选项
-    connect(ui->action_dohint, &QAction::triggered,
-            [=](){
-            QMessageBox::warning(this, "提示", "你开启了禁手提示");
-            //debug
-            //qDebug() << "开启禁手提示了";
-            game->banprompt = true;
-            //label3.setText("禁手提示开启");
-            //ui->statusbar->addWidget(&label3);
-    });
-    connect(ui->action_undohint, &QAction::triggered,
-            [=](){
-            QMessageBox::warning(this, "提示", "你关闭了禁手提示");
-            game->banprompt = false;
-            //label3.setText("禁手提示关闭");
-            //ui->statusbar->addWidget(&label3);
-    });
-    //初始化返回菜单选项
-    connect(ui->action_return, &QAction::triggered,
-            [=](){
-            setMouseTracking(false);
-            emit ppsignal();
-    });
-//    //初始化状态栏
-//    if(typefrommain == MAN_TO_MAN)
-//        label1.setText("双人模式 ");
-//    else if(typefrommain == MAN_TO_AI){
-//        label1.setText("人机模式 ");
-//    }
-//    else{
-//        label1.setText("机机模式 ");
-//    }
-
-//    if(banfrommain == true){
-//        label2.setText("禁手模式");
-//    }
-//    else{
-//        label2.setText("非禁手模式");
-//    }
-//    ui->statusbar->addWidget(&label1);
-//    ui->statusbar->addWidget(&label2);
-    //
-    //调用游戏初始化函数
-    game->startgame(typefrommain, banfrommain);
-    //开始下棋了
+    //初始化游戏
+    game->startgame(MAN_TO_AI, ban);
+    //默认关闭监听
+    setMouseTracking(false);
+    //初始化按钮
+    if(ban == 0){
+        ui->button_banhint->hide();
+    }
+    ui->button_start->setEnabled(true);
+    ui->button_restart->setEnabled(false);
+    ui->button_retract->setEnabled(false);
+    ui->button_return->setEnabled(true);
 }
 
-void p_pwindow::chessbyperson()
+void p_awindow::who_chess()
+{
+    if(game->player1.getnametype() == 1){                //人先下
+        setMouseTracking(true);
+    }
+    else{
+        GameState state;
+        setMouseTracking(false);                    //机器先下
+        state = game->chessbyai();
+        //AI落完子后,要update()
+        update();
+        //进行悔棋检查
+        checkretract();
+        if(state == BLACK_WIN || state == WHITEWIN){
+            endgame(state);
+        }
+        setMouseTracking(true);                     //该人下
+    }
+}
+
+void p_awindow::chessbyperson()
 {
     bool flag = false;
     if(clickPosCol != -1 && clickPosRow != -1 &&
             (game->board[clickPosRow][clickPosCol]==0||game->board[clickPosRow][clickPosCol]==4)){
         //考虑落子
+        //！！！
+        //关闭监视
+        setMouseTracking(false);
+        if(game->startban)                  //开启禁手模式就需要进行禁手的检查
+            game->checkboard(game->board);
         if(game->black_white){
             //放黑子记为1
             if(game->board[clickPosRow][clickPosCol]==4 && game->black_white)
@@ -131,7 +87,6 @@ void p_pwindow::chessbyperson()
         update();
         //进行悔棋检查
         checkretract();
-        //
         //判断输赢
         game->gamestate = game->win_lose(clickPosRow, clickPosCol);
         if(flag)
@@ -143,52 +98,48 @@ void p_pwindow::chessbyperson()
     }
     else return;
 }
-//还需要处理结束后的棋盘
-void p_pwindow::endgame(GameState state)
+
+
+void p_awindow::on_button_retract_clicked()
 {
-    if(state == BLACK_WIN){
-        QMessageBox::about(this, "游戏结束","    黑方获胜    ");
-        setMouseTracking(false);
-        clickPosCol = -1;
-        clickPosRow = -1;
-    }
-    else if(state == WHITEWIN){
-        QMessageBox::about(this, "游戏结束","    白方获胜    ");
-        setMouseTracking(false);
-        clickPosCol = -1;
-        clickPosRow = -1;
-    }
-    else{
-        QMessageBox::about(this, "游戏结束","    和棋    ");
-        setMouseTracking(false);
-        clickPosCol = -1;
-        clickPosRow = -1;
-    }
+    game->board[game->player1.newpoint.x()][game->player1.newpoint.y()] = game->player1.lastestinfor;
+    game->board[game->player2.newpoint.x()][game->player2.newpoint.y()] = game->player2.lastestinfor;
+    game->player1.newpoint.setX(game->player1.lastpoint.x());
+    game->player1.newpoint.setY(game->player1.lastpoint.y());
+    game->player2.newpoint.setX(game->player2.lastpoint.x());
+    game->player2.newpoint.setY(game->player2.lastpoint.y());
+    //悔棋不能再点了
+    ui->button_retract->setEnabled(false);
+    update();
 }
 
-void p_pwindow::checkretract()
+void p_awindow::on_button_restart_clicked()
 {
-    int num = 0;
-    for(int i=0; i<=GRID; i++){
-        for(int j=0; j<=GRID; j++){
-            if(game->board[i][j] == 1 || game->board[i][j] == 2){
-                num++;
-            }
-        }
-    }
-    if(num%2 || num == 0){
-        ui->action_undo->setEnabled(false);
-    }
-    else{
-        ui->action_undo->setEnabled(true);
-    }
-    if(num) ui->action_restart->setEnabled(true);
+    game->startgame(MAN_TO_AI, banfrommain);
+    QMessageBox::warning(this, "提示", "游戏重新开始");
+    //开始下第一手棋
+    ui->button_retract->setEnabled(false);
+    ui->button_restart->setEnabled(false);
+    ui->button_start->setEnabled(true);
+    //像界面初始化那样，默认关闭监听
+    setMouseTracking(false);
 }
 
+void p_awindow::on_button_return_clicked()
+{
+    setMouseTracking(false);                //监听关闭
+    emit pasignal();
+}
 
+void p_awindow::on_button_start_clicked()
+{
+    //点击后就不能用了
+    ui->button_start->setEnabled(false);
+    //第一步谁先下呢？
+    who_chess();
+}
 
-//可能需要多画一个框
-void p_pwindow::paintEvent(QPaintEvent *)
+void p_awindow::paintEvent(QPaintEvent *e)
 {
     QPainter painter(this);
     //画背景
@@ -221,6 +172,7 @@ void p_pwindow::paintEvent(QPaintEvent *)
         painter.drawRect(MARGIN+clickPosCol*INTERVEL-CHESS_MATE,
                             MARGIN+clickPosRow*INTERVEL-CHESS_MATE,
                             CHESS_MATE*2, CHESS_MATE*2);
+
     }
 
     //画棋子、禁手
@@ -254,9 +206,9 @@ void p_pwindow::paintEvent(QPaintEvent *)
     }
 }
 
-//可能要对game进行修改
-void p_pwindow::mouseMoveEvent(QMouseEvent *event)
+void p_awindow::mouseMoveEvent(QMouseEvent *event)
 {
+
     //鼠标位置(x, y)
     int x = event->x();
     int y = event->y();
@@ -320,23 +272,92 @@ void p_pwindow::mouseMoveEvent(QMouseEvent *event)
     update();
 }
 
-//落完子后就要执行checkboard
-void p_pwindow::mouseReleaseEvent(QMouseEvent *)
+void p_awindow::mouseReleaseEvent(QMouseEvent *)
 {
     if(SelectPos == false)  //只有选中了点击才有效果
         return;
     else SelectPos = false;
-
-    if(hasMouseTracking() == false) return;
-
-    if(game->startban)      //开启禁手模式就需要进行禁手的检查
-        game->checkboard(game->board);
+    //！！！
+    if(hasMouseTracking() == false) return;         //如过没有开启监视（肯定是AI下）那么即便点击也不能监视
     if(clickPosRow != -1 && clickPosCol != -1 && game->board[clickPosRow][clickPosCol] != 1
             && game->board[clickPosRow][clickPosCol] != 2){
         QSound::play("E:\\yi\\programme\\qt\\personal programme\\chess.wav");
-        //QTimer::singleShot(3000, this, SLOT(timeslot()));
         chessbyperson();
     }
     else return;
+    //人下完了，该AI了
+    QTimer::singleShot(1000, this, SLOT(AIturn()));
 }
 
+
+void p_awindow::endgame(GameState state)
+{
+    if(state == BLACK_WIN){
+        QMessageBox::about(this, "游戏结束","    黑方获胜    ");
+        setMouseTracking(false);
+        clickPosCol = -1;
+        clickPosRow = -1;
+    }
+    else if(state == WHITEWIN){
+        QMessageBox::about(this, "游戏结束","    白方获胜    ");
+        setMouseTracking(false);
+        clickPosCol = -1;
+        clickPosRow = -1;
+    }
+    else{
+        QMessageBox::about(this, "游戏结束","    和棋    ");
+        setMouseTracking(false);
+        clickPosCol = -1;
+        clickPosRow = -1;
+    }
+}
+
+void p_awindow::checkretract()
+{
+    int num = 0;
+    for(int i=0; i<=GRID; i++){
+        for(int j=0; j<=GRID; j++){
+            if(game->board[i][j] == 1 || game->board[i][j] == 2){
+                num++;
+            }
+        }
+    }
+    if(num%2 || num == 0){
+        ui->button_retract->setEnabled(false);
+    }
+    else{
+        ui->button_retract->setEnabled(true);
+    }
+    if(num) ui->button_restart->setEnabled(true);
+}
+
+void p_awindow::AIturn()
+{
+    //如果游戏有胜负了，AI就没有必要再下
+    if(game->gamestate != NOWINNER){
+        return;
+    }
+    GameState state;
+    setMouseTracking(false);
+    state = game->chessbyai();
+    //AI下完后要update()，否则不会直接画出AI落点的位置
+    update();
+    //进行悔棋检查
+    checkretract();
+    if(state == WHITEWIN || state == BLACK_WIN){
+        endgame(state);
+    }
+    setMouseTracking(true);
+}
+
+void p_awindow::on_button_banhint_clicked()
+{
+    if(ui->button_banhint->text() == "开启禁手提示"){
+        game->banprompt = true;
+        ui->button_banhint->setText("关闭禁手提示");
+    }
+    else{
+        game->banprompt = false;
+        ui->button_banhint->setText("开启禁手提示");
+    }
+}

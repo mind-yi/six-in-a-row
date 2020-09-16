@@ -6,7 +6,12 @@
 #include <QPushButton>
 #include <QMessageBox>
 #include <QDialog>
+#include <QLabel>
+#include <Qsound>
+#include <QTimer>
 
+#include <QTcpServer>
+#include <QTcpSocket>
 
 namespace Ui {
 class p_pwindow;
@@ -19,26 +24,31 @@ class p_pwindow : public QMainWindow
 public:
     explicit p_pwindow(QWidget *parent = 0);
     ~p_pwindow();
-
-    void paintEvent(QPaintEvent *event);
+protected:
+    void paintEvent(QPaintEvent *);
     void mouseMoveEvent(QMouseEvent *event);    //不懂event
-    void mouseReleaseEvent(QMouseEvent *event);
+    void mouseReleaseEvent(QMouseEvent *);
 public:
-    void initgame(GameType type, bool chess);
+    void initgameinterface(bool ban);       //仅初始化游戏的界面
     void chessbyperson();
     void endgame(GameState state);
+    void checkretract();                        //顺便checkrestart
 public:
-    QPushButton *button_retract;
-    QPushButton *button_return;
-    QPushButton *button_stalemant;
-    QPushButton *button_restart;
-    QPushButton *button_stop;
-    QPushButton *button_ban;
-private:
-    Ui::p_pwindow *ui;
+    QLabel label1;
+    QLabel label2;
+    QLabel label3;
+//记录来自主窗口的信息
+public:
+    GameType typefrommain;
+    bool banfrommain = true;    //默认开启
 
     Game *game;
+signals:
+    void ppsignal();
+public slots:
 
+private:
+    Ui::p_pwindow *ui;
     int clickPosRow, clickPosCol;   //储存将点击的位置。
     bool SelectPos = false;         //该点是否能选
 };

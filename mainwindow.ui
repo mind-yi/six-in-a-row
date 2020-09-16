@@ -6,23 +6,72 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1100</width>
-    <height>750</height>
+    <width>535</width>
+    <height>800</height>
    </rect>
   </property>
-  <property name="windowTitle">
-   <string>MainWindow</string>
+  <property name="mouseTracking">
+   <bool>true</bool>
   </property>
-  <widget class="QWidget" name="centralWidget"/>
+  <property name="windowTitle">
+   <string>六子棋</string>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <widget class="QPushButton" name="button_startgame">
+    <property name="enabled">
+     <bool>true</bool>
+    </property>
+    <property name="geometry">
+     <rect>
+      <x>410</x>
+      <y>500</y>
+      <width>111</width>
+      <height>51</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">font: 75 10pt &quot;等线&quot;;</string>
+    </property>
+    <property name="text">
+     <string>开始游戏</string>
+    </property>
+   </widget>
+  </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1100</width>
+     <width>535</width>
      <height>26</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menu_game">
+    <property name="title">
+     <string>游戏模式</string>
+    </property>
+    <addaction name="action_m_m"/>
+    <addaction name="action_m_a"/>
+    <addaction name="action_a_a"/>
+    <addaction name="action_c_s"/>
+   </widget>
+   <widget class="QMenu" name="menu_forbid">
+    <property name="title">
+     <string>禁手设置</string>
+    </property>
+    <addaction name="action_forbid"/>
+    <addaction name="action_unforbid"/>
+   </widget>
+   <widget class="QMenu" name="menu_chesschoice">
+    <property name="title">
+     <string>棋类选择</string>
+    </property>
+    <addaction name="action_black"/>
+    <addaction name="action_white"/>
+   </widget>
+   <addaction name="menu_game"/>
+   <addaction name="menu_forbid"/>
+   <addaction name="menu_chesschoice"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
    <attribute name="toolBarArea">
@@ -32,7 +81,49 @@
     <bool>false</bool>
    </attribute>
   </widget>
-  <widget class="QStatusBar" name="statusBar"/>
+  <action name="action_m_m">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>双人模式</string>
+   </property>
+  </action>
+  <action name="action_m_a">
+   <property name="text">
+    <string>人机模式</string>
+   </property>
+  </action>
+  <action name="action_a_a">
+   <property name="text">
+    <string>机机模式</string>
+   </property>
+  </action>
+  <action name="action_forbid">
+   <property name="text">
+    <string>开启禁手</string>
+   </property>
+  </action>
+  <action name="action_unforbid">
+   <property name="text">
+    <string>关闭禁手</string>
+   </property>
+  </action>
+  <action name="action_black">
+   <property name="text">
+    <string>黑棋</string>
+   </property>
+  </action>
+  <action name="action_white">
+   <property name="text">
+    <string>白棋</string>
+   </property>
+  </action>
+  <action name="action_c_s">
+   <property name="text">
+    <string>联机模式</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <resources/>
